@@ -5,7 +5,7 @@ module ManifoldLearning
     import Statistics: mean, std
     import StatsBase: StatsBase, fit, standardize
     import MultivariateStats: fit, outdim, projection, transform, KernelPCA, principalvars
-    import LinearAlgebra: eigvals, mul!, svd, qr, Symmetric, eigen, eigen!, diagm, tr, rmul!, I
+    import LinearAlgebra: eigvals, mul!, svd, qr, Symmetric, eigen, eigen!, diagm, tr, rmul!, I, schur
     import LightGraphs: neighbors, nv, add_edge!, connected_components, vertices,
                         dijkstra_shortest_paths, induced_subgraph, weights
     import SimpleWeightedGraphs: SimpleWeightedGraph
