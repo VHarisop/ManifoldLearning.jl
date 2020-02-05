@@ -85,7 +85,7 @@ function specDecompose(M::AbstractArray, tol::Real, dim::Int, use_naive::Bool)
     V[:] = V * Q; gap = diff(sort(Λ))[1]; itIdx = 0
     while true
         itIdx += 1
-        V = qr(M \ V)
+        V = Matrix(qr(M \ V).Q)
         ϵ₂, ϵComp, Λ[:] = _2infPert(M, V, gap=gap)
         @info("it: $(itIdx) - ϵ₂: $(ϵ₂) - ϵI: $(ϵComp)")
         if use_naive && (ϵ₂ ≤ tol * sqrt(n))
