@@ -24,7 +24,8 @@ summary(io::IO, R::LLE) = print(io, "LLE(outdim = $(outdim(R)), neighbors = $(ne
 
 ## interface functions
 function fit(::Type{LLE}, X::AbstractMatrix{T};
-             maxoutdim::Int=2, k::Int=12, tol::Real=1e-5, use_naive=false) where {T<:Real}
+             maxoutdim::Int=2, k::Int=12, tol::Real=1e-5,
+             use_naive=false, use_eigen=false) where {T<:Real}
     # Construct NN graph
     D, E = find_nn(X, k)
     _, C = largest_component(SimpleWeightedGraph(adjmat(D,E)))
@@ -43,8 +44,6 @@ function fit(::Type{LLE}, X::AbstractMatrix{T};
 
     if k > maxoutdim
         @warn("k > maxoutdim: regularization will be used")
-    else
-        tol = 0
     end
 
     # Reconstruct weights and compute embedding:
@@ -68,7 +67,11 @@ function fit(::Type{LLE}, X::AbstractMatrix{T};
         end
     end
 
-    λ, V = specDecompose(M, tol, maxoutdim, use_naive)
+    if use_eigen
+        λ, V = decompose(M, maxoutdim)
+    else
+        λ, V = specDecompose(M, tol, maxoutdim, use_naive)
+    end
     return LLE{T}(k, λ, rmul!(transpose(V), sqrt(n)))
 end
 

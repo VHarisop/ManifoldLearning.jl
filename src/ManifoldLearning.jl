@@ -60,6 +60,6 @@ module ManifoldLearning
     end
 
     # deprecated functions
-    @deprecate transform(DimensionalityReduction, X; k=k, d=d) fit(DimensionalityReduction, X; k=k, maxoutdim=d, use_naive=false)
+    @deprecate transform(DimensionalityReduction, X; k=k, d=d) fit(DimensionalityReduction, X; k=k, maxoutdim=d)
     @deprecate projection(DimensionalityReductionModel) transform(DimensionalityReductionModel)
 end
