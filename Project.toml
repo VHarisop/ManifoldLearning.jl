@@ -3,7 +3,7 @@ uuid = "06eb3307-b2af-5a2a-abea-d33192699d32"
 keywords = ["manifold learning", "dimensionality reduction", "nonlinear"]
 license = "MIT"
 desc = "A Julia package for nonlinear dimensionality reduction"
-repository = "https://github.com/JuliaStats/ManifoldLearning.jl.git"
+repository = "https://github.com/VHarisop/ManifoldLearning.jl.git"
 version = "0.4.0"
 
 [deps]

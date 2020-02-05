@@ -3,6 +3,8 @@
 # Nonlinear dimensionality reduction by locally linear embedding,
 # Roweis, S. & Saul, L., Science 290:2323 (2000)
 
+using Logging
+
 #### LLE type
 struct LLE{T <: Real} <: AbstractDimensionalityReduction
     k::Int
@@ -22,7 +24,7 @@ summary(io::IO, R::LLE) = print(io, "LLE(outdim = $(outdim(R)), neighbors = $(ne
 
 ## interface functions
 function fit(::Type{LLE}, X::AbstractMatrix{T};
-             maxoutdim::Int=2, k::Int=12, tol::Real=1e-5) where {T<:Real}
+             maxoutdim::Int=2, k::Int=12, tol::Real=1e-5, use_naive=false) where {T<:Real}
     # Construct NN graph
     D, E = find_nn(X, k)
     _, C = largest_component(SimpleWeightedGraph(adjmat(D,E)))
@@ -66,8 +68,52 @@ function fit(::Type{LLE}, X::AbstractMatrix{T};
         end
     end
 
-    λ, V = decompose(M, maxoutdim)
+    λ, V = specDecompose(M, tol, maxoutdim, use_naive)
     return LLE{T}(k, λ, rmul!(transpose(V), sqrt(n)))
 end
 
 transform(R::LLE) = R.proj
+
+
+function specDecompose(M::AbstractArray, tol::Real, dim::Int, use_naive::Bool)
+    @info("Entering: specDecompose")
+    n, _ = size(M)
+    V = Matrix(qr(randn(n, dim+1))); _, Q, Λ = schur(Symmetric(V' * Matrix(M * V)))
+    V[:] = V * Q; gap = diff(sort(Λ))[1]; itIdx = 0
+    while true
+        itIdx += 1
+        V = qr(M \ V)
+        ϵ₂, ϵComp, Λ[:] = _2infPert(M, V, gap=gap)
+        @info("it: $(itIdx) - ϵ₂: $(ϵ₂) - ϵI: $(ϵComp)")
+        if use_naive && (ϵ₂ ≤ tol * sqrt(n))
+            break
+        end
+        (ϵComp ≤ tol) && break
+    end
+    idx = sortperm(Λ)[2:(dim+1)]
+    return Λ[idx], V[:, idx]
+end
+
+
+"""
+    2infPert(A, V; gap=1.0)
+
+Compute the 2→∞ residual, substituting `V` for the true eigenvector
+matrix. Return both residuals as well the current Ritz values.
+"""
+function _2infPert(A, V; gap=1.0)
+    # Rayleigh-Ritz
+    _, Q, D = schur(V' * Matrix(A * V)); V[:] = V * Q
+    E = Matrix(A * V) - D' .* V
+    # compute residuals
+    ϵ₂    = opnorm(E)
+    # ϵ₂    = first(svds(E, nsv=1, ritzvec=false)[1].S)
+    ϵInf  = sqrt(maximum(sum(E.^2, dims=2)))
+    ϵFac  = (ϵ₂ / gap)
+    vv2E  = E - V * (V'E)
+    nrm0  = sqrt(maximum(sum(V.^2, dims=2)))
+    nrm1  = sqrt(maximum(sum(vv2E.^2, dims=2)))
+    ϵComp = 8 * nrm0 * ϵFac^2 + 2 * (nrm1 / gap) * (1 + 2 * ϵFac)
+    return ϵFac, min(ϵComp, ϵ₂), D
+end
+
